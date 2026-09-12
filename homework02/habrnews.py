@@ -19,11 +19,10 @@ def add_label():
     label = request.query.get('label')
     news_id = request.query.get('id')
     s = session()
-    news = s.query(News).filter(News.id == news_id).first()
+    news = s.query(News).get(news_id)
     if news:
         news.label = label
     s.commit()
-    s.close()
     if __name__ == "__main__":
         redirect('/news')
 
@@ -41,12 +40,12 @@ def update_news():
             n = News(
                 title=item['title'],
                 author=item['author'],
-                url=item['link'],
+                url=item.get('url', item.get('link', '')),
                 complexity=item['complexity'],
-                habr_id=item['id']
+                habr_id=item.get('id', '')
             )
             s.add(n)
-    s.commit()
+            s.commit()     
     s.close()
     if __name__ == "__main__":
         redirect('/news')
@@ -67,7 +66,23 @@ def recommendations():
     return template('news_recommendations', rows=classified_news)
 @route("/classify")
 def classify_news():
-        return "Классификация пока не реализована"
+    s = session()
+    labeled = s.query(News).filter(News.label != None).all()
+    rows = s.query(News).filter(News.label == None).all()
+
+    X_train = [f"{r.title} {r.author} {r.complexity}" for r in labeled]
+    y_train = [r.label for r in labeled]
+    X_test = [f"{r.title} {r.author} {r.complexity}" for r in rows]
+
+    clf = NaiveBayesClassifier(alpha=0.05)
+    clf.fit(X_train, y_train)
+    predictions = clf.predict(X_test)
+
+    order = {'good': 0, 'maybe': 1, 'never': 2}
+    classified_news = sorted(zip(rows, predictions), key=lambda x: order.get(x[1], 3))
+
+    s.close()
+    return [n for n, label in classified_news]
 if __name__ == "__main__":
     run(host="localhost", port=8080)
 
