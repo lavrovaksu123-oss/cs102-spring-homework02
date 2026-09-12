@@ -1,5 +1,7 @@
 from collections import Counter, defaultdict
 import math
+
+
 class NaiveBayesClassifier:
 
     def __init__(self, alpha=1.0):
@@ -10,7 +12,7 @@ class NaiveBayesClassifier:
         self.vocab = set()
 
     def fit(self, X, y):
-        """ Fit Naive Bayes classifier according to X, y. """
+        """Fit Naive Bayes classifier according to X, y."""
         self.classes = set(y)
         class_counts = Counter(y)
         total = len(y)
@@ -28,13 +30,10 @@ class NaiveBayesClassifier:
         for cls in self.classes:
             self.word_probs[cls] = {}
             for w in self.vocab:
-                self.word_probs[cls][w] = (
-                    (word_counts[cls][w] + self.alpha) /
-                    (total_words[cls] + self.alpha * d)
-                )
+                self.word_probs[cls][w] = (word_counts[cls][w] + self.alpha) / (total_words[cls] + self.alpha * d)
 
     def predict(self, X):
-        """ Perform classification on an array of test vectors X. """
+        """Perform classification on an array of test vectors X."""
         predictions = []
         for text in X:
             words = text.split()
@@ -49,8 +48,7 @@ class NaiveBayesClassifier:
         return predictions
 
     def score(self, X_test, y_test):
-        """ Returns the mean accuracy on the given test data and labels. """
+        """Returns the mean accuracy on the given test data and labels."""
         predictions = self.predict(X_test)
         correct = sum(1 for p, t in zip(predictions, y_test) if p == t)
         return correct / len(y_test)
-
